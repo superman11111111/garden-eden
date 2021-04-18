@@ -178,6 +178,7 @@ def init():
                     print(_cmd.exec.__name__, 'returned', r)
                     _try = 0
                     if (r == 0):
+                        input()
                         return 0
 
 
