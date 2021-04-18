@@ -85,7 +85,7 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
         attempt += 1
         print(f'[{time()}] Attempt #{attempt}')
         driver.get(target_sneaker)
-        size_elem = wait_for(driver, size_xpath, timeout=3)
+        size_elem = wait_for(driver, size_xpath, timeout=2)
         if size_elem:
             size_elem.click()
             break
