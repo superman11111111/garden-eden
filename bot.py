@@ -83,19 +83,17 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     attempt = 0
     while True:
         attempt += 1
-        print('Refreshing page')
+        print(f'[{time()}] Attempt #{attempt}')
         driver.get(target_sneaker)
-        size_elem = wait_for(driver, size_xpath)
+        size_elem = wait_for(driver, size_xpath, timeout=3)
         if size_elem:
-
             size_elem.click()
             break
         state = driver.find_element_by_xpath('/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div')
-        print(f'[{time()}] Attempt #{attempt}, Sneaker status: {state.text}')
+        print(f'sneaker_status={state.text}')
         if state.text == 'Ausverkauft':
             driver.close()
             return
-        sleep(3)
     wait_for(driver, cart_xpath).click()
     wait_for(driver, checkout_xpath).click()
     wait_for(driver, checkout_guest_xpath).click()
