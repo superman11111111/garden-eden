@@ -42,6 +42,8 @@ def get_drop_date(bot_config):
 
 def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug=True):
     print(f'DEBUG={debug}\nHEADLESS={headless}\nSNEAKER={target_sneaker}\nAMOUNT={amount}\nPAYMENT_METHOD={credentials["payment_method"]}')
+    if not debug:
+        print("\n!!!! WARNING THIS BOT WILL CHARGE THE PROVIDED FUNDS IF NOT STOPPED OR RUN IN DEBUG MODE. !!!!\n!!!! ABORT NOW IF YOU WANT TO !!!!\n")
 
     upcoming_url = 'https://www.nike.com/de/launch?s=upcoming'
     instock_url = 'https://www.nike.com/de/launch?s=in-stock'
