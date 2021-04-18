@@ -178,8 +178,9 @@ def init():
                     print(_cmd.exec.__name__, 'returned', r)
                     _try = 0
                     if (r == 0):
-                        break
+                        return 0
 
 
-            
-init()
+
+if __name__ == '__main__':      
+    init()
