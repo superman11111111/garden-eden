@@ -8,18 +8,21 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from threading import Thread
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from time import sleep, time
 from datetime import datetime, timedelta
+import signal
 import random
 import sys
 import os
+
 
 def wait_for(driver, xpath, timeout=30):
     try:
         return WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.XPATH, xpath)))
     except TimeoutException:
         print("Loading took too much time!")
+
 
 def _get_drop_date(sneaker_url):
     opt = Options()
@@ -33,7 +36,8 @@ def _get_drop_date(sneaker_url):
             _tmp = drop_date_elem.text
             _tmp = _tmp.split('Verfügbar am ')[-1].split(' ')
             del _tmp[1]
-            _tmp = datetime.strptime(str(datetime.now().year) + ':' +''.join(_tmp), "%Y:%d.%m.%H:%M")
+            _tmp = datetime.strptime(
+                str(datetime.now().year) + ':' + ''.join(_tmp), "%Y:%d.%m.%H:%M")
             driver.close()
             return _tmp.isoformat()
         print('Refreshing page')
@@ -41,11 +45,11 @@ def _get_drop_date(sneaker_url):
 
 def get_drop_date(bot_config):
     return _get_drop_date(bot_config['sneakers'][0]['url'])
-        
 
 
 def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug=True):
-    print(f'DEBUG={debug}\nHEADLESS={headless}\nSNEAKER={target_sneaker}\nAMOUNT={amount}\nPAYMENT_METHOD={credentials["payment_method"]}')
+    print(
+        f'DEBUG={debug}\nHEADLESS={headless}\nSNEAKER={target_sneaker}\nAMOUNT={amount}\nPAYMENT_METHOD={credentials["payment_method"]}')
     if not debug:
         print("\n!!!! WARNING THIS BOT WILL CHARGE THE PROVIDED FUNDS IF NOT STOPPED OR RUN IN DEBUG MODE. !!!!\n!!!! ABORT NOW IF YOU WANT TO !!!!\n")
 
@@ -63,23 +67,23 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     save_addr_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[2]/div/div[2]/form/div/div/div/div[2]/button'
     to_payment_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[2]/div/div[3]/div/button'
 
-    credit_card_xpath =   '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[1]/div/div/label'
+    credit_card_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[1]/div/div/label'
     ccn_xpath = '/html/body/form/div/div[1]/input'
     credit_card_order_review_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[5]/button'
 
-    paypal_xpath =        '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[2]/div/div/label'
+    paypal_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[2]/div/div/label'
     paypal_order_review_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[4]/div/div[2]/button'
 
     wire_transfer_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[3]/div/div/label'
-    wire_order_review_xpath =   '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[4]/div/div[2]/button'
+    wire_order_review_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[4]/div/div[2]/button'
 
-    klarna_xpath =        '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[4]/div/div/label'
+    klarna_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[3]/div/div[4]/div/div/label'
     klarna_birthday_xpath = '/html/body/div[2]/span/div/div/div/div/div/div/div[2]/div/div/div/span/div/div[3]/div[2]/div/label/div/div/span/input'
     klarna_order_review_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[2]/section[2]/div/button'
     klarna_submit_xpath = '/html/body/div[2]/span/div/div/div/div/div/div/div[3]/div/div/button/div/div[1]'
 
     confirm_order_xpath = '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[4]/div/div/div/div/section[2]/div/button'
-    
+
     options = Options()
     options.headless = headless
 
@@ -95,7 +99,8 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
         if size_elem:
             size_elem.click()
             break
-        state = driver.find_element_by_xpath('/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div')
+        state = driver.find_element_by_xpath(
+            '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div')
         print(f'sneaker_status={state.text}')
         if state.text == 'Ausverkauft':
             driver.close()
@@ -107,25 +112,30 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     fn_elem.click()
     fn_elem.clear()
     driver.find_element_by_xpath('//*[@id="addressSuggestionOptOut"]').click()
-    fn_elem.send_keys(Keys.TAB.join([credentials['first_name'], credentials['last_name']]))
+    fn_elem.send_keys(Keys.TAB.join(
+        [credentials['first_name'], credentials['last_name']]))
     addr_elem = driver.find_element_by_xpath('//*[@id="address1"]')
     addr_elem.click()
     addr_elem.clear()
-    addr_elem.send_keys(Keys.TAB.join([credentials['street'], Keys.TAB+credentials['zip_code'], credentials['city'], credentials['email'], credentials['phone']]))
+    addr_elem.send_keys(Keys.TAB.join([credentials['street'], Keys.TAB+credentials['zip_code'],
+                        credentials['city'], credentials['email'], credentials['phone']]))
 
     wait_for(driver, save_addr_xpath).click()
     sleep(.5)
-    wait_for(driver, '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[2]/div/div[2]/div[2]/div/div/div/div/label/span[2]')
+    wait_for(
+        driver, '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[2]/div/div[2]/div[2]/div/div/div/div/label/span[2]')
     wait_for(driver, to_payment_xpath).click()
 
     if credentials['payment_method'] == 'CREDITCARD':
         wait_for(driver, credit_card_xpath).click()
-        iframe = wait_for(driver, '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[4]/div/div[1]/div[2]/iframe')
+        iframe = wait_for(
+            driver, '/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[4]/div/div[1]/div[2]/iframe')
         driver.switch_to.frame(iframe)
         ccn_elem = wait_for(driver, '/html/body/form/div/div[1]/input')
         ccn_elem.click()
-        ccn_elem.send_keys(Keys.TAB.join([credentials['credit_card'], credentials['expiry'], credentials['ccv']]))
-        driver.switch_to.default_content()    
+        ccn_elem.send_keys(Keys.TAB.join(
+            [credentials['credit_card'], credentials['expiry'], credentials['ccv']]))
+        driver.switch_to.default_content()
         wait_for(driver, credit_card_order_review_xpath).click()
         confirm_order = wait_for(driver, confirm_order_xpath)
     elif credentials['payment_method'] == 'PAYPAL':
@@ -151,78 +161,75 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
 
     total_time = end_time-start_time
     print(f"This took {(total_time)} seconds")
-    open('info.log', 'a').write(f'[{start_time}]: HEADLESS={headless} TOTAL_TIME={total_time}\n')
+    open('info.log', 'a').write(
+        f'[{start_time}]: HEADLESS={headless} TOTAL_TIME={total_time}\n')
     print(f'Waiting {closing_delay} seconds before closing')
     sleep(closing_delay)
     driver.close()
     return 0
 
+
 def test():
-    for i in range(50):    
+    for i in range(50):
         headless = bool(random.getrandbits(1))
         closing_delay = 0
-        get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug)
+        get_sneaker(target_sneaker, amount, credentials,
+                    headless, closing_delay, debug)
+
 
 def days_hours_minutes(td):
     return f'{td.days} days {td.seconds//3600} hours {(td.seconds//60)%60} minutes and {td.seconds%60} seconds'
 
-def __print_remaining_time(drop_date, fileno, stop=False):
-    sys.stdin = os.fdopen(fileno)
-    while not stop:
-        try:
-            _td = drop_date - datetime.now()
-            print('Sleeping for:', days_hours_minutes(datetime.fromtimestamp(_td.total_seconds() // 2) - datetime(1970, 1, 1)))
-            input()
-            sys.stdout.write("\033[F")
-            sys.stdout.write("\033[K")
-        except EOFError:
-            print('EOFError')
-    pass
 
 def __wait_for_drop(sneaker_url, sneaker_name, drop_time, amount, credentials, headless, closing_delay, debug):
+    import select
+    import subprocess
     print(sneaker_url)
     drop_date = datetime.fromisoformat(drop_time)
-    _stop_p = False
-    p = Process(target=__print_remaining_time, args=(drop_date, sys.stdin.fileno(), _stop_p))
-    p.start()
     while True:
-        td = drop_date - datetime.now()
-        print(f'Time until drop: {days_hours_minutes(td)}')
-        _seconds = int(td.total_seconds())
+        _td = drop_date - datetime.now()
+        print(f'Time until drop: {days_hours_minutes(_td)}')
+        _seconds = int(_td.total_seconds())
         if _seconds < 600:
             break
+        print('Sleeping for:', days_hours_minutes(
+            datetime.fromtimestamp(_seconds // 2) - datetime(1970, 1, 1)))
         sleep(_seconds // 2)
-    _stop_p = True
-    p.join()
+
     return __get_sneaker(sneaker_url, amount, credentials, headless, closing_delay, debug)
-    
+
+
 def _wait_for_drop():
     return __wait_for_drop(target_sneaker, drop_time, amount, credentials, headless, closing_delay, debug)
+
 
 def _get_sneaker():
     return __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug)
 
+
 def wait_for_drop(bot_config):
     return __wait_for_drop(
-            bot_config['sneakers'][0]['url'], 
-            bot_config['sneakers'][0]['name'],
-            bot_config['sneakers'][0]['drop_time'],
-            bot_config['sneakers'][0]['amount'], 
-            bot_config['credentials'], 
-            bot_config['headless'], 
-            bot_config['closing_delay'], 
-            bot_config['debug']
+        bot_config['sneakers'][0]['url'],
+        bot_config['sneakers'][0]['name'],
+        bot_config['sneakers'][0]['drop_time'],
+        bot_config['sneakers'][0]['amount'],
+        bot_config['credentials'],
+        bot_config['headless'],
+        bot_config['closing_delay'],
+        bot_config['debug']
     )
+
 
 def get_sneaker(bot_config):
     return __get_sneaker(
-            bot_config['sneakers'][0]['url'], 
-            bot_config['sneakers'][0]['amount'], 
-            bot_config['credentials'], 
-            bot_config['headless'], 
-            bot_config['closing_delay'], 
-            bot_config['debug']
+        bot_config['sneakers'][0]['url'],
+        bot_config['sneakers'][0]['amount'],
+        bot_config['credentials'],
+        bot_config['headless'],
+        bot_config['closing_delay'],
+        bot_config['debug']
     )
+
 
 if __name__ == '__main__':
     _wait_for_drop()
