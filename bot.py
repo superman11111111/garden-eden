@@ -189,12 +189,9 @@ def __wait_for_drop(sneaker_url, sneaker_name, drop_time, amount, credentials, h
         td = drop_date - datetime.now()
         print(f'Time until drop: {days_hours_minutes(td)}')
         _seconds = int(td.total_seconds())
-        if _seconds > 600:
-            _wait = _seconds // 2
-            # print("Sleeping for:", days_hours_minutes(datetime.fromtimestamp(_wait)-datetime(1970,1,1)))
-            sleep(_wait)
-        else:
+        if _seconds < 600:
             break
+        sleep(_seconds // 2)
     _stop_p = True
     p.join()
     return __get_sneaker(sneaker_url, amount, credentials, headless, closing_delay, debug)
