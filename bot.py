@@ -7,9 +7,13 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+from threading import Thread
+from multiprocessing import Process
 from time import sleep, time
 from datetime import datetime, timedelta
 import random
+import sys
+import os
 
 def wait_for(driver, xpath, timeout=30):
     try:
@@ -160,21 +164,39 @@ def test():
         get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug)
 
 def days_hours_minutes(td):
-    return f'{td.days} days {td.seconds//3600} hours and {(td.seconds//60)%60} minutes'
+    return f'{td.days} days {td.seconds//3600} hours {(td.seconds//60)%60} minutes and {td.seconds%60} seconds'
+
+def __print_remaining_time(drop_date, fileno, stop=False):
+    sys.stdin = os.fdopen(fileno)
+    while not stop:
+        try:
+            _td = drop_date - datetime.now()
+            print('Sleeping for:', days_hours_minutes(datetime.fromtimestamp(_td.total_seconds() // 2) - datetime(1970, 1, 1)))
+            input()
+            sys.stdout.write("\033[F")
+            sys.stdout.write("\033[K")
+        except EOFError:
+            print('EOFError')
+    pass
 
 def __wait_for_drop(sneaker_url, sneaker_name, drop_time, amount, credentials, headless, closing_delay, debug):
     print(sneaker_url)
     drop_date = datetime.fromisoformat(drop_time)
+    _stop_p = False
+    p = Process(target=__print_remaining_time, args=(drop_date, sys.stdin.fileno(), _stop_p))
+    p.start()
     while True:
         td = drop_date - datetime.now()
         print(f'Time until drop: {days_hours_minutes(td)}')
         _seconds = int(td.total_seconds())
         if _seconds > 600:
             _wait = _seconds // 2
-            print("Sleeping for:", days_hours_minutes(datetime.fromtimestamp(_wait)-datetime(1970,1,1)))
+            # print("Sleeping for:", days_hours_minutes(datetime.fromtimestamp(_wait)-datetime(1970,1,1)))
             sleep(_wait)
         else:
             break
+    _stop_p = True
+    p.join()
     return __get_sneaker(sneaker_url, amount, credentials, headless, closing_delay, debug)
     
 def _wait_for_drop():
