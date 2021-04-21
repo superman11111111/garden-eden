@@ -56,6 +56,7 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     upcoming_url = 'https://www.nike.com/de/launch?s=upcoming'
     instock_url = 'https://www.nike.com/de/launch?s=in-stock'
 
+    cookie_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[3]/div[2]/button'
     size_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/ul/li[14]/button'
     cart_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/div/button'
     checkout_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div[3]/button[2]'
@@ -94,13 +95,16 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     while True:
         attempt += 1
         print(f'[{time()}] Attempt #{attempt}')
+
         driver.get(target_sneaker)
-        size_elem = wait_for(driver, size_xpath, timeout=2)
+        cookie_elem = wait_for(driver, cookie_xpath, timeout=1)
+        if cookie_elem:
+            cookie_elem.click()
+        size_elem = wait_for(driver, size_xpath, timeout=4)
         if size_elem:
             size_elem.click()
             break
-        state = driver.find_element_by_xpath(
-            '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div')
+        state = wait_for(driver, '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div')
         print(f'sneaker_status={state.text}')
         if state.text == 'Ausverkauft':
             driver.close()
