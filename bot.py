@@ -16,6 +16,14 @@ import random
 import sys
 import os
 
+upcoming_url = 'https://www.nike.com/de/launch?s=upcoming'
+instock_url = 'https://www.nike.com/de/launch?s=in-stock'
+
+cookie_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[3]/div[2]/button'
+size_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/ul/li[14]/button'
+cart_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/div/button'
+status_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div'
+
 
 def wait_for(driver, xpath, timeout=30):
     try:
@@ -53,12 +61,6 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
     if not debug:
         print("\n!!!! WARNING THIS BOT WILL CHARGE THE PROVIDED FUNDS IF NOT STOPPED OR RUN IN DEBUG MODE. !!!!\n!!!! ABORT NOW IF YOU WANT TO !!!!\n")
 
-    upcoming_url = 'https://www.nike.com/de/launch?s=upcoming'
-    instock_url = 'https://www.nike.com/de/launch?s=in-stock'
-
-    cookie_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[3]/div[2]/button'
-    size_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/ul/li[14]/button'
-    cart_xpath = '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div[2]/div/button'
     checkout_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div[3]/button[2]'
     checkout_guest_xpath = '/html/body/div[1]/div/div[3]/div[2]/div/div/div[2]/div[2]/button'
 
@@ -104,7 +106,8 @@ def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, 
         if size_elem:
             size_elem.click()
             break
-        state = wait_for(driver, '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div')
+        state = wait_for(
+            driver, '/html/body/div[2]/div/div/div[1]/div/div[2]/div[2]/div/section[1]/div[2]/aside/div/div[2]/div/div')
         print(f'sneaker_status={state.text}')
         if state.text == 'Ausverkauft':
             driver.close()
@@ -203,6 +206,29 @@ def __wait_for_drop(sneaker_url, sneaker_name, drop_time, amount, credentials, h
     return __get_sneaker(sneaker_url, amount, credentials, headless, closing_delay, debug)
 
 
+def __get_upcoming(headless):
+    options = Options()
+    options.headless = headless
+    driver = webdriver.Firefox(options=options)
+    driver.get(upcoming_url)
+    cookie_elem = wait_for(driver, cookie_xpath, timeout=3)
+    if (cookie_elem):
+        cookie_elem.click()
+    _sneakers = []
+    for fig in driver.find_elements_by_css_selector('figure.pb2-sm'):
+        _split = fig.text.split('\n')
+        _drop_time = datetime.strptime(
+            '-'.join([str(datetime.now().year)] + _split[:2]), '%Y-%b-%d').replace(hour=9)
+        if (_drop_time - datetime.now()).total_seconds() > 0:
+            _s = {'url': fig.find_elements_by_css_selector('a:first-of-type')[0].get_attribute('href'),
+                  'drop_time': _drop_time.isoformat(),
+                  'name': ' '.join(fig.text.split('\n')[2:]),
+                  'amount': 1}
+            _sneakers.append(_s)
+    driver.close()
+    return _sneakers
+
+
 def _wait_for_drop():
     return __wait_for_drop(target_sneaker, drop_time, amount, credentials, headless, closing_delay, debug)
 
@@ -211,12 +237,12 @@ def _get_sneaker():
     return __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug)
 
 
-def wait_for_drop(bot_config):
+def wait_for_drop(bot_config, n):
     return __wait_for_drop(
-        bot_config['sneakers'][0]['url'],
-        bot_config['sneakers'][0]['name'],
-        bot_config['sneakers'][0]['drop_time'],
-        bot_config['sneakers'][0]['amount'],
+        bot_config['sneakers'][n]['url'],
+        bot_config['sneakers'][n]['name'],
+        bot_config['sneakers'][n]['drop_time'],
+        bot_config['sneakers'][n]['amount'],
         bot_config['credentials'],
         bot_config['headless'],
         bot_config['closing_delay'],
@@ -232,6 +258,12 @@ def get_sneaker(bot_config):
         bot_config['headless'],
         bot_config['closing_delay'],
         bot_config['debug']
+    )
+
+
+def get_upcoming(bot_config):
+    return __get_upcoming(
+        bot_config['headless']
     )
 
 

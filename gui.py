@@ -12,6 +12,7 @@ class Command:
         self.exec = exec
         self.args = args
 
+
 def get_config(config_file=CONFIG_FILE):
     if not config_file:
         global CONFIG_FILE
@@ -23,11 +24,12 @@ def get_config(config_file=CONFIG_FILE):
         config = {}
     return config
 
+
 def save_config(new_config, config_file=CONFIG_FILE):
     if not config_file:
         global CONFIG_FILE
         config_file = CONFIG_FILE
-    open(config_file, 'w').write(json.dumps(new_config))
+    return open(config_file, 'w').write(json.dumps(new_config))
 
 
 def change_config(config_path, value, save=False):
@@ -38,7 +40,9 @@ def change_config(config_path, value, save=False):
     tmp_dict[config_path[-1]] = value
     if save:
         print('Modified config saved to', CONFIG_FILE)
-        save_config(config)
+        return save_config(config)
+    return 1
+
 
 def _w_obj(obj, max_depth, path=[]):
     _obj_type = type(obj)
@@ -81,7 +85,8 @@ def set_config_file():
     global CONFIG_FILE
     _l = len(open(CONFIG_FILE, 'r').read())
     print('Current config file:', CONFIG_FILE, f'length: {_l}')
-    _files = [x for x in os.listdir('.') if os.path.isfile(os.path.join('.', x))]
+    _files = [x for x in os.listdir(
+        '.') if os.path.isfile(os.path.join('.', x))]
     for i in range(len(_files)):
         print(i, _files[i])
     while True:
@@ -113,7 +118,7 @@ def set_config_file():
         f.close()
     print('New config file is now', CONFIG_FILE)
     return 0
-    
+
 
 def edit_config():
     return _w_obj(get_config(), 2)
@@ -126,7 +131,6 @@ def clear_screen():
 def clear_line():
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
-    # print("\033[A                             \033[A")
 
 
 def clear_lines(n=1):
@@ -136,8 +140,33 @@ def clear_lines(n=1):
 
 def get_drop_time(bot_config):
     config = get_config()
-    change_config(['bot_config', 'sneakers', 0, 'drop_time'], bot.get_drop_date(bot_config), save=True)
-    return 0 
+    change_config(['bot_config', 'sneakers', 0, 'drop_time'],
+                  bot.get_drop_date(bot_config), save=True)
+    return 0
+
+
+def get_upcoming(bot_config):
+    config = get_config()
+    sneakers = bot.get_upcoming(bot_config)
+    return change_config(['bot_config', 'sneakers'], sneakers, save=True)
+
+
+def select_sneaker(bot_config):
+    _sneakers = bot_config['sneakers']
+    for i in range(len(_sneakers)):
+        print(i, _sneakers[i])
+    while True:
+        try:
+            _sel = int(input(f'Choose [0-{len(_sneakers)-1}]: ') or 0)
+            if _sel > -1 and _sel < len(_sneakers):
+                return _sel
+        except ValueError:
+            pass
+
+
+def wait_for_drop(bot_config):
+    n = select_sneaker(bot_config)
+    return bot.wait_for_drop(bot_config, n)
 
 
 def get_options():
@@ -145,12 +174,14 @@ def get_options():
     bot_config = config['bot_config']
     options = [
         Command('RUN', bot.get_sneaker, (bot_config, )),
-        Command('WAIT_FOR_DROP', bot.wait_for_drop, (bot_config, )),
+        Command('WAIT_FOR_DROP', wait_for_drop, (bot_config, )),
         Command('CONFIG_FILE', set_config_file),
         Command('EDIT_CONFIG', edit_config),
         Command('GET_DROP_TIME', get_drop_time, (bot_config, )),
+        Command('GET_UPCOMING', get_upcoming, (bot_config, )),
     ]
     return options
+
 
 def init():
     options = get_options()
@@ -169,11 +200,12 @@ def init():
             print('Invalid value, Try again!')
             continue
         clear_lines(_try*(len(options)+3))
-        if _sel > -1 and _sel < len(options): 
+        if _sel > -1 and _sel < len(options):
             for i in range(len(options)):
                 if i == _sel:
                     _cmd = options[i]
-                    print('Executing', _cmd.exec.__name__, 'with', len(_cmd.args), 'arguments')
+                    print('Executing', _cmd.exec.__name__,
+                          'with', len(_cmd.args), 'arguments')
                     r = _cmd.exec(*_cmd.args)
                     print(_cmd.exec.__name__, 'returned', r)
                     _try = 0
@@ -182,6 +214,5 @@ def init():
                         return 0
 
 
-
-if __name__ == '__main__':      
+if __name__ == '__main__':
     init()
