@@ -43,6 +43,7 @@ def _get_drop_date(sneaker_url):
         if drop_date_elem:
             _tmp = drop_date_elem.text
             _tmp = _tmp.split('Verfügbar am ')[-1].split(' ')
+
             del _tmp[1]
             _tmp = datetime.strptime(
                 str(datetime.now().year) + ':' + ''.join(_tmp), "%Y:%d.%m.%H:%M")
@@ -51,8 +52,8 @@ def _get_drop_date(sneaker_url):
         print('Refreshing page')
 
 
-def get_drop_date(bot_config):
-    return _get_drop_date(bot_config['sneakers'][0]['url'])
+def get_drop_date(bot_config, n):
+    return _get_drop_date(bot_config['sneakers'][n]['url'])
 
 
 def __get_sneaker(target_sneaker, amount, credentials, headless, closing_delay, debug=True):
@@ -250,10 +251,10 @@ def wait_for_drop(bot_config, n):
     )
 
 
-def get_sneaker(bot_config):
+def get_sneaker(bot_config, n):
     return __get_sneaker(
-        bot_config['sneakers'][0]['url'],
-        bot_config['sneakers'][0]['amount'],
+        bot_config['sneakers'][n]['url'],
+        bot_config['sneakers'][n]['amount'],
         bot_config['credentials'],
         bot_config['headless'],
         bot_config['closing_delay'],

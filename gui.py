@@ -140,8 +140,9 @@ def clear_lines(n=1):
 
 def get_drop_time(bot_config):
     config = get_config()
-    change_config(['bot_config', 'sneakers', 0, 'drop_time'],
-                  bot.get_drop_date(bot_config), save=True)
+    _sel = select_sneaker(bot_config)
+    change_config(['bot_config', 'sneakers', _sel, 'drop_time'],
+                  bot.get_drop_date(bot_config, _sel), save=True)
     return 0
 
 
@@ -151,10 +152,18 @@ def get_upcoming(bot_config):
     return change_config(['bot_config', 'sneakers'], sneakers, save=True)
 
 
+def get_sneaker(bot_config):
+    _sel = select_sneaker(bot_config)
+    bot.get_sneaker(bot_config, _sel)
+
+
 def select_sneaker(bot_config):
     _sneakers = bot_config['sneakers']
+    _max = max(len(s['name']) for s in _sneakers)
     for i in range(len(_sneakers)):
-        print(i, _sneakers[i])
+        _s = _sneakers[i]
+        print(i, _s['name'], (_max-len(_s['name']))
+              * ' ', _s['drop_time'], ' ', _s['url'])
     while True:
         try:
             _sel = int(input(f'Choose [0-{len(_sneakers)-1}]: ') or 0)
@@ -173,45 +182,52 @@ def get_options():
     config = get_config()
     bot_config = config['bot_config']
     options = [
-        Command('RUN', bot.get_sneaker, (bot_config, )),
+        Command('RUN', get_sneaker, (bot_config, )),
         Command('WAIT_FOR_DROP', wait_for_drop, (bot_config, )),
         Command('CONFIG_FILE', set_config_file),
         Command('EDIT_CONFIG', edit_config),
-        Command('GET_DROP_TIME', get_drop_time, (bot_config, )),
+        # Command('GET_DROP_TIME', get_drop_time, (bot_config, )),
         Command('GET_UPCOMING', get_upcoming, (bot_config, )),
     ]
     return options
 
 
 def init():
+    status = 'NULL'
     options = get_options()
     _ll = max(len(c.name) for c in options)
     _out = ''
     for i in range(len(options)):
         _cmd = options[i]
         _out += f'{i}: {_cmd.name} {(_ll*2-len(_cmd.name))*" "}({_cmd.exec.__name__})\n'
+
     print()
-    _try = 0
+    print('[Status]', status)
     while True:
-        _try += 1
+        print()
         try:
             _sel = int(input(_out + f'\nChoose: [0-{len(options)-1}]: '))
+            clear_lines(11)
         except ValueError:
-            print('Invalid value, Try again!')
+            clear_lines(11)
+            status = 'Invalid value, Try again!'
+            print()
+            print('[Status]', status)
             continue
-        clear_lines(_try*(len(options)+3))
+        # clear_lines(_try*(len(options)+3))
         if _sel > -1 and _sel < len(options):
             for i in range(len(options)):
                 if i == _sel:
                     _cmd = options[i]
-                    print('Executing', _cmd.exec.__name__,
-                          'with', len(_cmd.args), 'arguments')
+                    status = ' '.join(['Executing', _cmd.exec.__name__,
+                                       'with', str(len(_cmd.args)), 'arguments'])
+                    print()
+                    print('[Status]', status)
                     r = _cmd.exec(*_cmd.args)
-                    print(_cmd.exec.__name__, 'returned', r)
-                    _try = 0
-                    if (r == 0):
-                        input()
-                        return 0
+                    status = ' '.join([_cmd.exec.__name__, 'returned', str(r)])
+                    # clear_lines(3)
+                    print()
+                    print('[Status]', status)
 
 
 if __name__ == '__main__':
