@@ -194,22 +194,23 @@ def get_options():
 
 def init():
     status = 'NULL'
-    options = get_options()
-    _ll = max(len(c.name) for c in options)
-    _out = ''
-    for i in range(len(options)):
-        _cmd = options[i]
-        _out += f'{i}: {_cmd.name} {(_ll*2-len(_cmd.name))*" "}({_cmd.exec.__name__})\n'
 
     print()
     print('[Status]', status)
     while True:
+        options = get_options()
+        _ll = max(len(c.name) for c in options)
+        _out = ''
+        for i in range(len(options)):
+            _cmd = options[i]
+            _out += f'{i}: {_cmd.name} {(_ll*2-len(_cmd.name))*" "}({_cmd.exec.__name__})\n'
+
         print()
         try:
             _sel = int(input(_out + f'\nChoose: [0-{len(options)-1}]: '))
-            clear_lines(11)
+            clear_lines(10)
         except ValueError:
-            clear_lines(11)
+            clear_lines(10)
             status = 'Invalid value, Try again!'
             print()
             print('[Status]', status)
